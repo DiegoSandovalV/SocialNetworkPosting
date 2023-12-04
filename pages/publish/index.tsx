@@ -1,5 +1,5 @@
 import React from "react"
-import FacebookPostForm from "../components/FacebookPostForm"
+import FacebookPostForm from "../../components/FacebookPostForm"
 import Navbar from "@/components/Navbar"
 
 const Home = () => {

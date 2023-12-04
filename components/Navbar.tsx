@@ -1,27 +1,28 @@
 // Navbar.js
 
 import React from "react"
+import Link from "next/link"
 
 const Navbar = () => {
   return (
     <nav className="bg-gray-800 p-4">
       <div className="max-w-lg mx-auto flex justify-between items-center">
-        <a href="/" className="text-white text-xl font-semibold">
+        <Link href="/" className="text-white text-xl font-semibold">
           Social Media App
-        </a>
+        </Link>
         <div className="space-x-4">
-          <a
+          <Link
             href="/publish"
             className="text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring focus:ring-blue-200 focus:ring-opacity-50"
           >
             Publish
-          </a>
-          <a
+          </Link>
+          <Link
             href="/statistics"
             className="text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring focus:ring-blue-200 focus:ring-opacity-50"
           >
             Statistics
-          </a>
+          </Link>
         </div>
       </div>
     </nav>
