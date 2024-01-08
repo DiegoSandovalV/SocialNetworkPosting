@@ -1,104 +1,176 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
+
+interface WindowWithFB extends Window {
+  fbAsyncInit?: () => void
+  FB?: {
+    init: (config: {
+      appId: string
+      autoLogAppEvents: boolean
+      xfbml: boolean
+      version: string
+    }) => void
+  }
+}
 
 const FacebookPostForm = () => {
   const [message, setMessage] = useState("")
-  const [image, setImage] = useState("")
-  const [imageUrl, setImageUrl] = useState("")
+  const [image, setImage] = useState<File | null>(null)
 
-  const handleFacebookSubmit = async (e: any) => {
+  const handleFacebookSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!message || (!image && !imageUrl)) {
-      alert(
-        "Please fill in both the message and either select an image or provide an image URL."
-      )
-      return
-    }
-
-    // If an image URL is provided, use it; otherwise, use the uploaded image.
-    const selectedImage = imageUrl || image
-
-    const formData = new FormData()
-    formData.append("message", message)
-
-    // If an image URL is provided, include it in the form data.
-    if (imageUrl) {
-      formData.append("image", imageUrl)
-    } else {
-      formData.append("image", image)
-    }
-
     try {
-      const response = await fetch("/api/facebook-post", {
-        method: "POST",
-        body: formData,
-      })
+      // Page Access Token
+      const accessToken = process.env.API_KEY || ""
+      console.log(accessToken)
+
+      // Page ID
+      const pageId = process.env.FB_PAGE_ID || ""
+      console.log(pageId)
+
+      // Prepare form data
+      const formData = new FormData()
+      formData.append("message", message)
+      formData.append("access_token", accessToken)
+      if (image) {
+        formData.append("image", image)
+      }
+
+      // endpoint to publish the image with caption
+      const response = await fetch(
+        `https://graph.facebook.com/v17.0/${pageId}/photos`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      )
+      const data = await response.json()
 
       if (response.ok) {
-        const data = await response.json()
-        console.log("Posted to Facebook successfully:", data)
+        console.log("Image published successfully:", data)
       } else {
-        const errorData = await response.json()
-        console.error("Error posting to Facebook:", errorData)
+        console.error("Error publishing image:", data.error)
       }
     } catch (error) {
       console.error("Error:", error)
     }
   }
 
-  const handleInstagramPost = async (e: any) => {
-    e.preventDefault()
-
-    if (!message || (!image && !imageUrl)) {
-      alert(
-        "Please fill in both the message and either select an image or provide an image URL."
-      )
-      return
-    }
-
-    // If an image URL is provided, use it; otherwise, use the uploaded image.
-    const selectedImage = imageUrl || image
-
-    const formData = new FormData()
-    formData.append("message", message)
-
-    // If an image URL is provided, include it in the form data.
-    if (imageUrl) {
-      formData.append("image", imageUrl)
-    } else {
-      formData.append("image", image)
-    }
-
+  const handleInstagramPost = async () => {
     try {
-      const response = await fetch("/api/instagram-post", {
-        method: "POST",
-        body: formData,
-      })
+      // Instagram Access Token
+      const instagramAccessToken = process.env.API_KEY || ""
+      console.log("Instagram Access Token:", instagramAccessToken)
 
-      if (response.ok) {
-        const data = await response.json()
-        console.log("Posted to Instagram successfully:", data)
+      // Instagram User ID
+      const instagramPageId = process.env.IG_PAGE_ID || ""
+      console.log("Instagram User ID:", instagramPageId)
+
+      // Prepare form data
+      const formData = new FormData()
+      formData.append("access_token", instagramAccessToken)
+      formData.append("caption", message)
+      if (image) {
+        console.log("Image:", image)
+        formData.append("image_url", image)
+      }
+
+      // endpoint to publish the image with caption
+      const instagramResponse = await fetch(
+        `https://graph.facebook.com/v17.0/${instagramPageId}/media`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      )
+
+      const instagramResult = await instagramResponse.json()
+
+      if (instagramResponse.ok) {
+        console.log(
+          "Image draft created on Instagram successfully:",
+          instagramResult
+        )
+        const data = (await instagramResponse.json()) as { id: string }
+        publishPost(data.id)
       } else {
-        const errorData = await response.json()
-        console.error("Error posting to Instagram:", errorData)
+        console.error(
+          "Error posting image on Instagram:",
+          instagramResult.error
+        )
       }
     } catch (error) {
       console.error("Error:", error)
     }
   }
 
-  const handleBothPlatformsPost = async (e: any) => {
-    // Use Promise.all to execute both functions concurrently
+  const publishPost = async (id: string) => {
     try {
-      await Promise.all([handleFacebookSubmit(e), handleInstagramPost(e)])
-      alert("Posted to both platforms successfully")
-    } catch (error) {
-      console.error("Error posting to one or both platforms:", error)
-      alert(
-        "Error posting to one or both platforms. Check the console for details."
+      // Instagram Access Token
+      const instagramAccessToken = process.env.API_KEY || ""
+      console.log("Instagram Access Token:", instagramAccessToken)
+
+      const instagramPageId = process.env.IG_PAGE_ID || ""
+
+      // Prepare form data
+      const formData = new FormData()
+      formData.append("access_token", instagramAccessToken)
+
+      // endpoint to publish the image with caption
+      const instagramResponse = await fetch(
+        `https://graph.facebook.com/v17.0/${instagramPageId}/media_publish?creation_id=${id}`,
+        {
+          method: "POST",
+          body: formData,
+        }
       )
+
+      const instagramResult = await instagramResponse.json()
+
+      if (instagramResponse.ok) {
+        console.log(
+          "Image published on Instagram successfully:",
+          instagramResult
+        )
+      } else {
+        console.error(
+          "Error publishing image on Instagram:",
+          instagramResult.error
+        )
+      }
+    } catch (error) {
+      console.error("Error:", error)
     }
   }
+
+  const handleBothPlatformsPost = async () => {
+    // // Call handleFacebookSubmit and handleInstagramPost as needed
+    // await handleFacebookSubmit()
+    // await handleInstagramPost()
+  }
+
+  useEffect(() => {
+    // Load the Facebook SDK asynchronously
+    ;(window as WindowWithFB).fbAsyncInit = function () {
+      ;(window as WindowWithFB).FB?.init({
+        appId: "your-app-id",
+        autoLogAppEvents: true,
+        xfbml: true,
+        version: "v10.0",
+      })
+    }
+    ;(function (d, s, id) {
+      var js,
+        fjs = d.getElementsByTagName(s)[0]
+      if (d.getElementById(id)) {
+        return
+      }
+      js = d.createElement(s) as HTMLScriptElement
+      js.id = id
+      js.src = "https://connect.facebook.net/en_US/sdk.js"
+      fjs.parentNode?.insertBefore(js, fjs)
+    })(document, "script", "facebook-jssdk")
+  }, [])
 
   return (
     <div className="max-w-lg mx-auto mt-10 p-4 bg-white shadow-md rounded-lg">
@@ -139,15 +211,6 @@ const FacebookPostForm = () => {
             accept=".jpg, .jpeg, .png"
             onChange={(e) => setImage(e.target.files[0])}
             className="mt-1 px-3 py-2 block w-full rounded-md text-gray-700 border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-          />
-          <input
-            type="url"
-            id="imageUrl"
-            name="imageUrl"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="Or provide an image URL"
-            className="mt-2 px-3 py-2 block w-full text-gray-700 rounded-md border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
           />
         </div>
 
