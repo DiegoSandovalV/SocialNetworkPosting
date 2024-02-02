@@ -1,5 +1,6 @@
 import { get } from "http"
 import React, { useState, useEffect } from "react"
+require("dotenv").config()
 
 interface WindowWithFB extends Window {
   fbAsyncInit?: () => void
@@ -17,14 +18,15 @@ const FacebookPostForm = () => {
   const [message, setMessage] = useState("")
   const [image, setImage] = useState<File | null>(null)
 
-  const handleFacebookSubmit = async () => {
+  const handleFacebookSubmit = async (e: any) => {
+    e.preventDefault()
     try {
       // Page Access Token
-      const accessToken = process.env.API_KEY || "  "
-      console.log(accessToken)
+      const accessToken = process.env.NEXT_PUBLIC_API_KEY || ""
+      console.log("access token:", accessToken)
 
       // Page ID
-      const pageId = process.env.FB_PAGE_ID || ""
+      const pageId = process.env.NEXT_PUBLIC_FB_PAGE_ID || ""
       console.log(pageId)
 
       // Prepare form data
@@ -56,6 +58,12 @@ const FacebookPostForm = () => {
   }
 
   const handleInstagramPost = async () => {
+    const accessToken = process.env.NEXT_PUBLIC_API_KEY || ""
+    console.log("access token:", accessToken)
+
+    // Page ID
+    const pageId = process.env.NEXT_PUBLIC_FB_PAGE_ID || "a"
+    console.log(pageId)
     try {
       // Instagram Access Token
       const instagramAccessToken = process.env.API_KEY || ""
@@ -98,10 +106,10 @@ const FacebookPostForm = () => {
   const publishPost = async (id: string) => {
     try {
       // Instagram Access Token
-      const instagramAccessToken = process.env.API_KEY || ""
+      const instagramAccessToken = process.env.NEXT_PUBLIC_API_KEY || ""
       console.log("Instagram Access Token:", instagramAccessToken)
 
-      const instagramPageId = process.env.IG_PAGE_ID || ""
+      const instagramPageId = process.env.NEXT_PUBLIC_IG_PAGE_ID || ""
 
       // Prepare form data
       const formData = new FormData()
@@ -163,8 +171,8 @@ const FacebookPostForm = () => {
   }
   const handleBothPlatformsPost = async () => {
     // Call handleFacebookSubmit and handleInstagramPost as needed
-    await handleFacebookSubmit()
-    await handleInstagramPost()
+    await handleFacebookSubmit(Event as any)
+    // await handleInstagramPost()
   }
 
   useEffect(() => {
