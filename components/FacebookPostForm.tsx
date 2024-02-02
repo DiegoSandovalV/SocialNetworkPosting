@@ -1,3 +1,4 @@
+import { get } from "http"
 import React, { useState, useEffect } from "react"
 
 interface WindowWithFB extends Window {
@@ -16,12 +17,10 @@ const FacebookPostForm = () => {
   const [message, setMessage] = useState("")
   const [image, setImage] = useState<File | null>(null)
 
-  const handleFacebookSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
+  const handleFacebookSubmit = async () => {
     try {
       // Page Access Token
-      const accessToken = process.env.API_KEY || ""
+      const accessToken = process.env.API_KEY || "  "
       console.log(accessToken)
 
       // Page ID
@@ -71,33 +70,25 @@ const FacebookPostForm = () => {
       formData.append("access_token", instagramAccessToken)
       formData.append("caption", message)
       if (image) {
-        console.log("Image:", image)
-        formData.append("image_url", image)
+        const imageUrl = await getImageUrl()
+        formData.append("image_url", imageUrl)
       }
 
       // endpoint to publish the image with caption
-      const instagramResponse = await fetch(
-        `https://graph.facebook.com/v17.0/${instagramPageId}/media`,
+      const response = await fetch(
+        `https://graph.facebook.com/v17.0/${instagramPageId}/media?media_type=IMAGE`,
         {
           method: "POST",
           body: formData,
         }
       )
+      const data = await response.json()
 
-      const instagramResult = await instagramResponse.json()
-
-      if (instagramResponse.ok) {
-        console.log(
-          "Image draft created on Instagram successfully:",
-          instagramResult
-        )
-        const data = (await instagramResponse.json()) as { id: string }
+      if (response.ok) {
+        console.log("Image uploaded to Instagram successfully:", data)
         publishPost(data.id)
       } else {
-        console.error(
-          "Error posting image on Instagram:",
-          instagramResult.error
-        )
+        console.error("Error uploading image to Instagram:", data.error)
       }
     } catch (error) {
       console.error("Error:", error)
@@ -143,10 +134,37 @@ const FacebookPostForm = () => {
     }
   }
 
+  const getImageUrl = async () => {
+    try {
+      const formData = new FormData()
+      formData.append("image", image as Blob)
+
+      const imageHostResponse = await fetch(
+        "https://api.imgbb.com/1/upload?key=1234",
+        {
+          method: "POST",
+          body: formData,
+        }
+      )
+      const imageHostData = await imageHostResponse.json()
+      console.log("Image Host Data:", imageHostData)
+
+      if (imageHostResponse.ok) {
+        return imageHostData.data.url
+      } else {
+        console.error(
+          "Error uploading image to image host:",
+          imageHostData.error
+        )
+      }
+    } catch (error) {
+      console.error("Error:", error)
+    }
+  }
   const handleBothPlatformsPost = async () => {
-    // // Call handleFacebookSubmit and handleInstagramPost as needed
-    // await handleFacebookSubmit()
-    // await handleInstagramPost()
+    // Call handleFacebookSubmit and handleInstagramPost as needed
+    await handleFacebookSubmit()
+    await handleInstagramPost()
   }
 
   useEffect(() => {
